@@ -1,5 +1,6 @@
 package com.example.henriktornqvist.amazinggyro;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,6 +13,7 @@ public class MainActivity extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState); //Hej Henxon!
         setContentView(R.layout.activity_main);
+        startActivity(new Intent(this, Game.class));
     }
 
     @Override
