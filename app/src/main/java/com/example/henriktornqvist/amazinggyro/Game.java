@@ -27,7 +27,7 @@ public class Game extends Activity implements SensorEventListener {
     public static float x;
     public static float y;
 
-    private SensorManager sensorManager = null;
+    private SensorManager sensorManager = null; //testkommentar
 
     /**
      * Called when the activity is first created.
