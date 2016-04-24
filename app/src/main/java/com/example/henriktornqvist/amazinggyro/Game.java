@@ -14,9 +14,10 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Display;
 import android.view.View;
+
+import java.util.ArrayList;
 
 public class Game extends Activity implements SensorEventListener {
     /**
@@ -27,7 +28,10 @@ public class Game extends Activity implements SensorEventListener {
     private static float velX;
     private static float velY;
 
-    private static float gravityFactor = 0.01f;
+    private static float accX;
+    private static float accY;
+
+    private static float gravityFactor = 0.1f;
     private static float bounceFactor = 0.9f;
     private static float frictionFactor = 0.001f;
 
@@ -37,7 +41,19 @@ public class Game extends Activity implements SensorEventListener {
     public static float x;
     public static float y;
 
-    private SensorManager sensorManager = null; //testkommentar
+    public static float xPrevious = 0f;
+    public static float yPrevious = 0f;
+
+    public static int epsilonPix = 1;
+
+    public static GameLevel gameLevel;
+    public static ArrayList<RectF> gameLevelWalls;
+
+    private SensorManager sensorManager = null;
+
+    private static float ballSizeFactor = 0.05f;
+
+    private int ballDiameter;
 
     /**
      * Called when the activity is first created.
@@ -46,17 +62,24 @@ public class Game extends Activity implements SensorEventListener {
     public void onCreate(Bundle savedInstanceState) {
 
         super.onCreate(savedInstanceState);
-        // Get a reference to a SensorManager
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mCustomDrawableView = new CustomDrawableView(this);
-        setContentView(mCustomDrawableView);
-        // setContentView(R.layout.main);
 
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         width = size.x;
         height = size.y;
+
+        // Get a reference to a SensorManager
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mCustomDrawableView = new CustomDrawableView(this);
+        setContentView(mCustomDrawableView);
+        // setContentView(R.layout.main);
+
+
+        gameLevel = new GameLevel(width, height);
+        gameLevelWalls = gameLevel.getWalls();
+
+        ballDiameter = (int) (width * ballSizeFactor);
 
     }
 
@@ -66,13 +89,10 @@ public class Game extends Activity implements SensorEventListener {
             if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 // the values you were calculating originally here were over 10000!
 
-                velX = (velX - sensorEvent.values[0] * gravityFactor) * (1 - frictionFactor);
-                velY = (velY + sensorEvent.values[1] * gravityFactor) * (1 - frictionFactor);
+                accX = -sensorEvent.values[0] * gravityFactor;
+                accY = sensorEvent.values[1] * gravityFactor;
 
-                x = x + velX;
-                y = y + velY;
-
-                checkBoundaries();
+                moveBall();
 
 //                Log.d("Game", "x = " + Float.toString(sensorEvent.values[0]) + "\ny = " + Float.toString(sensorEvent.values[1]));
 
@@ -85,15 +105,58 @@ public class Game extends Activity implements SensorEventListener {
 
     }
 
-    private void checkBoundaries() {
-        Log.d("Game", "x = " + x + "\nwidth = " + width);
-        Log.d("Game", "y = " + y + "\nheight = " + height);
-        if ((int) x > width - 50 || (int) x < 0) {
-            velX = -velX * 1;
+    private void moveBall() {
+//        Log.d("Game", "x = " + x + "\nballWidth = " + ballWidth);
+//        Log.d("Game", "y = " + y + "\nballHeight = " + ballHeight);
+
+        velX = (velX + accX) * (1 - frictionFactor);
+        velY = (velY + accY) * (1 - frictionFactor);
+
+        x = x + velX;
+        y = y + velY;
+
+        if ((int) x > width - ballDiameter) {
+            velX = -1f * Math.abs(velX) * bounceFactor;
+            x = xPrevious;
         }
-        if ((int) y > height - 100 || (int) y < 0) {
-            velY = -velY * 1;
+        if ((int) x < 0) {
+            velX = Math.abs(velX) * bounceFactor;
+            x = xPrevious;
         }
+        if ((int) y > height - ballDiameter - 50) {
+            velY = -1f * Math.abs(velY) * bounceFactor;
+            y = yPrevious;
+        }
+        if ((int) y < 0) {
+            velY = Math.abs(velY) * bounceFactor;
+            y = yPrevious;
+        }
+
+        for (int index = 0; index < gameLevelWalls.size(); index++) {
+
+            FIIIIIIIIXAAAA
+            if ((int) x > width - ballDiameter) {
+                velX = -1f * Math.abs(velX) * bounceFactor;
+                x = xPrevious;
+            }
+            if ((int) x < 0) {
+                velX = Math.abs(velX) * bounceFactor;
+                x = xPrevious;
+            }
+            if ((int) y > height - ballDiameter - 50) {
+                velY = -1f * Math.abs(velY) * bounceFactor;
+                y = yPrevious;
+            }
+            if ((int) y < 0) {
+                velY = Math.abs(velY) * bounceFactor;
+                y = yPrevious;
+            }
+        }
+
+        xPrevious = x;
+        yPrevious = y;
+
+
     }
 
     // I've chosen to not implement this method
@@ -121,24 +184,25 @@ public class Game extends Activity implements SensorEventListener {
     }
 
     public class CustomDrawableView extends View {
-        static final int width = 50;
-        static final int height = 50;
 
         public CustomDrawableView(Context context) {
             super(context);
 
             mDrawable = new ShapeDrawable(new OvalShape());
             mDrawable.getPaint().setColor(0xff74AC23);
-            mDrawable.setBounds((int) x, (int) y, (int) x + width, (int) y + height);
+            mDrawable.setBounds((int) x, (int) y, (int) x + ballDiameter, (int) y + ballDiameter);
         }
 
         protected void onDraw(Canvas canvas) {
-            RectF oval = new RectF(Game.x, Game.y, Game.x + width, Game.y
-                    + height); // set bounds of rectangle
+            RectF oval = new RectF(Game.x, Game.y, Game.x + ballDiameter, Game.y
+                    + ballDiameter); // set bounds of rectangle
             Paint p = new Paint(); // set some paint options
             p.setColor(Color.BLUE);
             canvas.drawOval(oval, p);
 //            Log.d("Game", "onDraw");
+            for (int index = 0; index < gameLevelWalls.size(); index++) {
+                canvas.drawRect(gameLevelWalls.get(index), p);
+            }
             invalidate();
         }
     }
