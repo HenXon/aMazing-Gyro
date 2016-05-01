@@ -14,6 +14,7 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState); //Hej Henxon!
         setContentView(R.layout.activity_main);
         startActivity(new Intent(this, Game.class));
+        finish();
     }
 
     @Override

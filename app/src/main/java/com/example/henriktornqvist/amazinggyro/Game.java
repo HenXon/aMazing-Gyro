@@ -14,6 +14,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 
@@ -55,6 +56,8 @@ public class Game extends Activity implements SensorEventListener {
 
     private int ballDiameter;
 
+    RectF ball;
+
     /**
      * Called when the activity is first created.
      */
@@ -63,23 +66,25 @@ public class Game extends Activity implements SensorEventListener {
 
         super.onCreate(savedInstanceState);
 
+        ball = new RectF(Game.x, Game.y, Game.x + ballDiameter, Game.y
+                + ballDiameter);
+
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
         width = size.x;
         height = size.y;
 
-        // Get a reference to a SensorManager
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        mCustomDrawableView = new CustomDrawableView(this);
-        setContentView(mCustomDrawableView);
-        // setContentView(R.layout.main);
-
-
         gameLevel = new GameLevel(width, height);
         gameLevelWalls = gameLevel.getWalls();
 
         ballDiameter = (int) (width * ballSizeFactor);
+
+        // Get a reference to a SensorManager
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        mCustomDrawableView = new CustomDrawableView(this);
+        setContentView(mCustomDrawableView);
+        mCustomDrawableView.setKeepScreenOn(true);
 
     }
 
@@ -134,24 +139,31 @@ public class Game extends Activity implements SensorEventListener {
 
         for (int index = 0; index < gameLevelWalls.size(); index++) {
 
-            FIIIIIIIIXAAAA
-            if ((int) x > width - ballDiameter) {
-                velX = -1f * Math.abs(velX) * bounceFactor;
-                x = xPrevious;
-            }
-            if ((int) x < 0) {
-                velX = Math.abs(velX) * bounceFactor;
-                x = xPrevious;
-            }
-            if ((int) y > height - ballDiameter - 50) {
-                velY = -1f * Math.abs(velY) * bounceFactor;
-                y = yPrevious;
-            }
-            if ((int) y < 0) {
-                velY = Math.abs(velY) * bounceFactor;
-                y = yPrevious;
+//            FIIIIIIIIXAAAA
+            RectF rectF = gameLevelWalls.get(index);
+//            Log.d("Game", "x = " + ball.left);
+            if (rectF.intersects(ball, rectF)) {
+                if ((int) x > rectF.left - ballDiameter && xPrevious < rectF.left + ballDiameter) {
+                    velX = -1f * Math.abs(velX) * bounceFactor;
+                    x = xPrevious;
+                }
+//                Log.d("Game", "x = " + x + " rectF.right = " + rectF.right + " xPrevious = " + xPrevious);
+                if ((int) x < rectF.right && xPrevious > rectF.right) {
+                    Log.d("Game", "Blablabal");
+                    velX = Math.abs(velX) * bounceFactor;
+                    x = xPrevious;
+                }
+//                if ((int) y > height - ballDiameter - 50) {
+//                    velY = -1f * Math.abs(velY) * bounceFactor;
+//                    y = yPrevious;
+//                }
+//                if ((int) y < 0) {
+//                    velY = Math.abs(velY) * bounceFactor;
+//                    y = yPrevious;
+//                }
             }
         }
+//        Log.d("Game", " x = " + x + " xPrevious = " + xPrevious);
 
         xPrevious = x;
         yPrevious = y;
@@ -194,11 +206,11 @@ public class Game extends Activity implements SensorEventListener {
         }
 
         protected void onDraw(Canvas canvas) {
-            RectF oval = new RectF(Game.x, Game.y, Game.x + ballDiameter, Game.y
+            ball = new RectF(Game.x, Game.y, Game.x + ballDiameter, Game.y
                     + ballDiameter); // set bounds of rectangle
             Paint p = new Paint(); // set some paint options
             p.setColor(Color.BLUE);
-            canvas.drawOval(oval, p);
+            canvas.drawOval(ball, p);
 //            Log.d("Game", "onDraw");
             for (int index = 0; index < gameLevelWalls.size(); index++) {
                 canvas.drawRect(gameLevelWalls.get(index), p);
